@@ -433,6 +433,11 @@ class VAE_Diffusers_Config_Base(Diffusers_Config_Base):
     @classmethod
     def _get_base_or_raise(cls, mod: ModelOnDisk, override_name: str | None = None) -> BaseModelType:
         config_dict = get_config_dict_or_raise(common_config_paths(mod.path))
+        # FLUX.1 VAEs use a 16-channel latent space (SD/SDXL use 4). The diffusers AutoencoderKL
+        # config records this as `latent_channels`, so check it first -- otherwise a FLUX VAE folder
+        # falls through to the SD1 default below and is mis-typed as StableDiffusion1.
+        if config_dict.get("latent_channels") == 16:
+            return BaseModelType.Flux
         if cls._config_looks_like_sdxl(config_dict):
             return BaseModelType.StableDiffusionXL
         elif cls._name_looks_like_sdxl(mod, override_name):
@@ -448,6 +453,10 @@ class VAE_Diffusers_SD1_Config(VAE_Diffusers_Config_Base, Config_Base):
 
 class VAE_Diffusers_SDXL_Config(VAE_Diffusers_Config_Base, Config_Base):
     base: Literal[BaseModelType.StableDiffusionXL] = Field(default=BaseModelType.StableDiffusionXL)
+
+
+class VAE_Diffusers_FLUX_Config(VAE_Diffusers_Config_Base, Config_Base):
+    base: Literal[BaseModelType.Flux] = Field(default=BaseModelType.Flux)
 
 
 class VAE_Diffusers_Flux2_Config(Diffusers_Config_Base, Config_Base):

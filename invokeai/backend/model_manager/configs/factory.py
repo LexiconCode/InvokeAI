@@ -130,6 +130,7 @@ from invokeai.backend.model_manager.configs.vae import (
     VAE_Checkpoint_SD2_Config,
     VAE_Checkpoint_SDXL_Config,
     VAE_Checkpoint_Wan_Config,
+    VAE_Diffusers_FLUX_Config,
     VAE_Diffusers_Flux2_Config,
     VAE_Diffusers_SD1_Config,
     VAE_Diffusers_SDXL_Config,
@@ -226,6 +227,7 @@ AnyModelConfig = Annotated[
         # VAE - diffusers format
         Annotated[VAE_Diffusers_SD1_Config, VAE_Diffusers_SD1_Config.get_tag()],
         Annotated[VAE_Diffusers_SDXL_Config, VAE_Diffusers_SDXL_Config.get_tag()],
+        Annotated[VAE_Diffusers_FLUX_Config, VAE_Diffusers_FLUX_Config.get_tag()],
         Annotated[VAE_Diffusers_Flux2_Config, VAE_Diffusers_Flux2_Config.get_tag()],
         Annotated[VAE_Diffusers_Wan_Config, VAE_Diffusers_Wan_Config.get_tag()],
         # ControlNet - checkpoint format
