@@ -1014,9 +1014,12 @@ class Flux2CheckpointModel(ModelLoader):
         - layer.weight: quantized FP8 data
         - layer.weight_scale: scale factor (FP32 scalar or per-channel)
 
-        Dequantization formula: dequantized = weight.to(float) * weight_scale
+        Dequantization formula: dequantized = weight.to(float) * weight_scale, downcast
+        to bfloat16 (the caller's load dtype). Storing bfloat16 keeps at most one float32
+        intermediate alive; a whole-dict float32 pass is 4x the checkpoint size in host
+        RAM and can OOM machines that run the model fine.
 
-        Also handles FP8 tensors stored with float8_e4m3fn dtype by converting to float.
+        Also handles FP8 tensors stored with float8_e4m3fn dtype.
         """
         # Check for ComfyUI-style scale factors
         weight_scale_keys = [k for k in sd.keys() if isinstance(k, str) and k.endswith(".weight_scale")]
@@ -1041,7 +1044,7 @@ class Flux2CheckpointModel(ModelLoader):
                             if block_size > 1:
                                 scale = scale.repeat_interleave(block_size, dim=dim)
 
-                sd[weight_key] = weight_float * scale
+                sd[weight_key] = (weight_float * scale).to(torch.bfloat16)
 
         # Filter out scale metadata keys and other FP8 metadata
         keys_to_remove = [
@@ -1071,8 +1074,8 @@ class Flux2CheckpointModel(ModelLoader):
             del sd[k]
 
         for key in keys_to_convert:
-            # Convert FP8 tensor to float32
-            sd[key] = sd[key].float()
+            # float8 requires .float(); per-tensor downcast, see docstring.
+            sd[key] = sd[key].float().to(torch.bfloat16)
 
         return sd
 
